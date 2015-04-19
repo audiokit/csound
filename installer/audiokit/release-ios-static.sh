@@ -17,25 +17,39 @@
 AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/iOS}
 BUILD_TYPE=${BUILD_TYPE:-Release}
 
+# Use xcpretty to beautify xcodebuild output if it is available
+if which xcpretty 2>/dev/null; then
+   XCPRETTY=xcpretty
+else
+   XCPRETTY=cat
+fi
+
 if ! test -d ${AK_ROOT}; then
-    echo "Destination AudioKit OSX root does not exist: $AK_ROOT"
+    echo "Destination AudioKit iOS root does not exist: $AK_ROOT"
     exit 1
 fi
 
-echo "Building Csound (float) for ${BUILD_TYPE} ..."
-cp Custom-ak.cmake ../../Custom.cmake
 
 rm -rf ios
 mkdir ios
 cd ios
 
+FLAGS="-DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DUSE_OPEN_MP=0 \
+	-DBUILD_STATIC_LIBRARY=1 -DBUILD_CSOUND_AC=1 -DBUILD_RELEASE=1 -DBUILD_TESTS=0 \
+	-DBUILD_CSOUND_AC_PYTHON_INTERFACE=0 -DBUILD_CSOUND_AC_LUA_INTERFACE=0 \
+	-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1"
+
+echo "Building Csound (float) for ${BUILD_TYPE} ..."
+echo "Using flags: $FLAGS"
+
 #cmake ../../.. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../iOS.cmake -DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DBUILD_STATIC_LIBRARY=1 -DBUILD_CSOUND_AC=1 -DBUILD_RELEASE=1 -DBUILD_TESTS=0 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 || exit 1
-cmake ../../.. -G Xcode  -DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DBUILD_STATIC_LIBRARY=1 -DBUILD_CSOUND_AC=1 -DBUILD_RELEASE=1 -DBUILD_TESTS=0 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1 || exit 1
-xcodebuild -sdk iphoneos -xcconfig ../device.xcconfig -target CsoundLib-static -configuration $BUILD_TYPE || exit 1
+cmake ../../.. -G Xcode $FLAGS || exit 1
+(xcodebuild -sdk iphoneos -xcconfig ../device.xcconfig -target CsoundLib-static -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
 cp $BUILD_TYPE/libCsoundLib.a ./libcsound-device.a
-xcodebuild -sdk iphonesimulator -xcconfig ../simulator.xcconfig -target CsoundLib-static -configuration $BUILD_TYPE || exit 1 
-lipo -create libcsound-device.a $BUILD_TYPE/libCsoundLib.a -output ../libcsound.a
+(xcodebuild -sdk iphonesimulator -xcconfig ../simulator.xcconfig -target CsoundLib-static -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
+lipo -create libcsound-device.a $BUILD_TYPE/libCsoundLib.a -output ../libcsound.a || exit 1
 
 # Copy new libraries and headers for Csound and its opcodes to the AudioKit framework
+cp libcsound.a $AK_ROOT
 
 echo "... finished."
