@@ -50,6 +50,6 @@ cp $BUILD_TYPE/libCsoundLib.a ./libcsound-device.a
 lipo -create libcsound-device.a $BUILD_TYPE/libCsoundLib.a -output ../libcsound.a || exit 1
 
 # Copy new libraries and headers for Csound and its opcodes to the AudioKit framework
-cp libcsound.a $AK_ROOT
+cp ../libcsound.a $AK_ROOT
 
 echo "... finished."

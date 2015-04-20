@@ -14,7 +14,7 @@
 
 
 # Default: AudioKit in the same parent directory as csound
-AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/OSX}
+AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/OSX/CsoundLib.framework}
 BUILD_TYPE=${BUILD_TYPE:-Release}
 
 if ! test -d ${AK_ROOT}; then
@@ -23,8 +23,8 @@ if ! test -d ${AK_ROOT}; then
 fi
 
 echo "Building Csound (float) for ${BUILD_TYPE} ..."
-cp Custom-ak.cmake ../../Custom.cmake
 
+rm -rf osx
 mkdir osx
 cd osx
 
@@ -36,13 +36,13 @@ cd $BUILD_TYPE/CsoundLib.framework
 
 # Change the library name for libsndfile in CSoundLib and libcsound.dylib
 install_name_tool -change `otool -LX CsoundLib |grep libsndfile.1|awk '{print $1}'` @loader_path/../../libs/libsndfile.1.dylib CsoundLib
-cp CsoundLib ${AK_ROOT}/CsoundLib.framework/
+cp CsoundLib ${AK_ROOT}/
 
-cp Headers/* ${AK_ROOT}/../Common/csound/
+cp Headers/* ${AK_ROOT}/../../Common/csound/
 
 cd Resources/Opcodes
 for a in *.dylib; do
-    cp $a ${AK_ROOT}/CsoundLib.framework/Resources/Opcodes/
+    cp $a ${AK_ROOT}/Resources/Opcodes/
 done
 
 
