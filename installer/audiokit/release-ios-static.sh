@@ -17,6 +17,9 @@
 AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/iOS}
 BUILD_TYPE=${BUILD_TYPE:-Release}
 
+# Path to the audiokit/libsndfile library with built libraries
+SNDFILE=$HOME/src/ak/libsndfile
+
 # Use xcpretty to beautify xcodebuild output if it is available
 if which xcpretty 2>/dev/null; then
    XCPRETTY=xcpretty
@@ -37,7 +40,7 @@ cd ios
 FLAGS="-DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DUSE_OPEN_MP=0 \
 	-DBUILD_STATIC_LIBRARY=1 -DBUILD_CSOUND_AC=1 -DBUILD_RELEASE=1 -DBUILD_TESTS=0 \
 	-DBUILD_CSOUND_AC_PYTHON_INTERFACE=0 -DBUILD_CSOUND_AC_LUA_INTERFACE=0 \
-	-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1"
+	-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1 -DSNDFILE_DIR=$SNDFILE"
 
 echo "Building Csound (float) for ${BUILD_TYPE} ..."
 echo "Using flags: $FLAGS"
