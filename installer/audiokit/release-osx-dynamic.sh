@@ -35,15 +35,15 @@ make -j6 install || exit 1
 cd $BUILD_TYPE/CsoundLib.framework
 
 # Change the library name for libsndfile in CSoundLib and libcsound.dylib
+install_name_tool -id CsoundLib CsoundLib
 install_name_tool -change `otool -LX CsoundLib |grep libsndfile.1|awk '{print $1}'` @loader_path/../../libs/libsndfile.1.dylib CsoundLib
-cp CsoundLib ${AK_ROOT}/
+cp -v CsoundLib ${AK_ROOT}/
 
-cp Headers/* ${AK_ROOT}/../../Common/csound/
+cp -v Headers/* ${AK_ROOT}/../../Common/csound/
 
 cd Resources/Opcodes
 for a in *.dylib; do
-    cp $a ${AK_ROOT}/Resources/Opcodes/
+   cp -v $a ${AK_ROOT}/Resources/Opcodes/
 done
-
 
 echo "... finished."

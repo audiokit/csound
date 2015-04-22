@@ -52,9 +52,11 @@ cp $BUILD_TYPE/CsoundLib.framework/CsoundLib CsoundLib-dev.dylib
 cp $BUILD_TYPE/CsoundLib.framework/CsoundLib CsoundLib-sim.dylib
 
 lipo -create CsoundLib-dev.dylib CsoundLib-sim.dylib -output $BUILD_TYPE/CsoundLib.framework/CsoundLib || exit 1
-install_name_tool -change `otool -LX CsoundLib |grep libsndfile.1|awk '{print $1}'` @rpath/CsoundLib.framework/libs/libsndfile.1.dylib $BUILD_TYPE/CsoundLib.framework/CsoundLib || exit 1
+cd $BUILD_TYPE/CsoundLib.framework/
+install_name_tool -id CsoundLib CsoundLib
+install_name_tool -change `otool -LX CsoundLib |grep libsndfile|awk '{print $1}'` @rpath/libsndfile.framework/libsndfile CsoundLib || exit 1
 
 # Copy new libraries for Csound to the AudioKit framework for iOS
-cp $BUILD_TYPE/CsoundLib.framework/CsoundLib $AK_ROOT/CsoundLib.framework/
+cp -v CsoundLib $AK_ROOT/CsoundLib.framework/
 
 echo "... finished."
