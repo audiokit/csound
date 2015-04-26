@@ -149,7 +149,12 @@ int AuHAL_open(CSOUND *csound, const csRtAudioParams * parm,
       prop.mSelector = kAudioObjectPropertyName;
       AudioObjectGetPropertyData(sysdevs[i],
                                  &prop, 0, NULL, &psize, &devName);
-      strcpy(devinfo[i].name, CFStringGetCStringPtr(devName, defaultEncoding));
+      const char *name = CFStringGetCStringPtr(devName, defaultEncoding);
+      if (name) {
+          strcpy(devinfo[i].name, name);
+      } else {
+          CFStringGetCString(devName, devinfo[i].name, sizeof(devinfo[i].name), defaultEncoding);
+      }
       CFRelease(devName);
 
       devchannels = 0;
