@@ -405,7 +405,12 @@ SET(BUILD_SHARED_LIBS ON)
 find_package(OpenMP)
 
 # First, required stuff
-find_library(LIBSNDFILE_LIBRARY sndfile)
+if(APPLE AND IOS)
+    # Locate a pre-built iOS version of libsndfile
+    find_library(LIBSNDFILE_LIBRARY sndfile PATHS ${SNDFILE_DIR}/audiokit NO_DEFAULT_PATH)
+else()
+    find_library(LIBSNDFILE_LIBRARY sndfile)
+endif()
 
 if(NOT LIBSNDFILE_LIBRARY AND WIN32)
 find_library(LIBSNDFILE_LIBRARY sndfile-1)
