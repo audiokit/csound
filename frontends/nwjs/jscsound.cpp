@@ -48,6 +48,11 @@
 #include <node.h>
 #include <string>
 #include <v8.h>
+#if defined(WIN32)
+#include <concurrent_queue.h>
+#else
+#include <boost/lockfree/queue.hpp>
+#endif
 
 using namespace v8;
 
@@ -56,6 +61,13 @@ static bool stop_playing = true;
 static bool finished = true;
 static char *orc = 0;
 static char *sco = 0;
+static uv_thread_t uv_csound_perform_thread;
+static uv_async_t uv_csound_message_async;
+#if defined(WIN32)
+static concurrency::concurrent_queue<char *> csound_messages_queue;
+#else
+static boost::lockfree::queue<char *, boost::lockfree::fixed_sized<false> > csound_messages_queue(0);
+#endif
 
 /**
  * This is provided so that the developer may verify that
@@ -102,8 +114,7 @@ static double run_javascript(Isolate *isolate, std::string code)
 }
 
 /**
- * Compiles the CSD file, and also parses out the <html> element
- * and loads it into NW.js.
+ * Compiles the CSD file.
  */
 void compileCsd(const FunctionCallbackInfo<Value>& args)
 {
@@ -112,27 +123,6 @@ void compileCsd(const FunctionCallbackInfo<Value>& args)
     //csoundCreateMessageBuffer(csound, 1);
     int result = 0;
     v8::String::Utf8Value csd_path(args[0]->ToString());
-    std::ifstream csd_file(*csd_path);
-    if (csd_file.good()) {
-        std::string csd_text((std::istreambuf_iterator<char>(csd_file)),
-                             std::istreambuf_iterator<char>());
-        csd_file.close();
-        size_t html_start = csd_text.find("<html");
-        if (html_start != std::string::npos) {
-            size_t html_end = csd_text.find("</html>", html_start);
-            if (html_end != std::string::npos) {
-                std::string html_text = csd_text.substr(html_start, html_end - html_start + 7);
-                std::string html_path = *csd_path;
-                html_path += ".html";
-                std::ofstream html_file(html_path.c_str(), std::ios_base::out | std::ios_base::binary);
-                if (html_file.good()) {
-                    html_file.write(html_text.c_str(), html_text.size());
-                    html_file.close();
-                }
-                run_javascript(isolate, "location = '" + html_path + "';");
-            }
-        }
-    }
     result = csoundCompileCsd(csound, *csd_path);
     args.GetReturnValue().Set(Number::New(isolate, result));
 }
@@ -229,15 +219,31 @@ static Persistent<Function, CopyablePersistentTraits<Function>> console_function
     return function;
 }
 
-void csoundMessageCallback_(CSOUND *csound, int attr, const char *format, va_list valist)
+void uv_csound_message_callback(uv_async_t *handle)
 {
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
+    char *message;
+#if defined(WIN32)
+    while (csound_messages_queue.try_pop(message)) {
+#else
+    while (csound_messages_queue.pop(message)) {
+#endif
+        Local<v8::Value> args[] = { String::NewFromUtf8(isolate, message) };
+        Local<Function> local_function = Local<Function>::New(isolate, console_function(isolate));
+        local_function->Call(isolate->GetCurrentContext()->Global(), 1, args);
+        std::free(message);
+    }
+}
+
+void csoundMessageCallback_(CSOUND *csound, int attr, const char *format, va_list valist)
+{
     char buffer[0x1000];
     std::vsprintf(buffer, format, valist);
-    Local<v8::Value> args[] = { String::NewFromUtf8(isolate, buffer) };
-    Local<Function> local_function = Local<Function>::New(isolate, console_function(isolate));
-    local_function->Call(isolate->GetCallingContext()->Global(), 1, args);
+    // Actual data...
+    csound_messages_queue.push(strdup(buffer));
+    // ... and notification that data is ready.
+    uv_async_send(&uv_csound_message_async);
 }
 
 /**
@@ -287,17 +293,18 @@ void isPlaying(const FunctionCallbackInfo<Value>& args)
     args.GetReturnValue().Set(Number::New(isolate, playing) );
 }
 
-static void consume_messages(Isolate *isolate)
+void uv_csound_perform_thread_routine(void * arg)
 {
-    char buffer[0x1002];
-    int pending_messages = csoundGetMessageCnt(csound);
-    for (int i = 0, n = csoundGetMessageCnt(csound);  i < n; ++i) {
-        const char *message = csoundGetFirstMessage(csound);
-        Local<v8::Value> args[] = { String::NewFromUtf8(isolate, message) };
-        Local<Function> local_function = Local<Function>::New(isolate, console_function(isolate));
-        local_function->Call(isolate->GetCallingContext()->Global(), 1, args);
-        csoundPopFirstMessage(csound);
+    csoundMessage(csound, "Began JavaScript perform()...\n");
+    csoundStart(csound);
+    int result = 0;
+    for (stop_playing = false, finished = false;
+            ((stop_playing == false) && (finished == false)); ) {
+        finished = csoundPerformBuffer(csound);
     }
+    csoundMessage(csound, "Ended JavaScript perform(), cleaning up now.\n");
+    result = csoundCleanup(csound);
+    csoundReset(csound);
 }
 
 /**
@@ -307,27 +314,9 @@ static void consume_messages(Isolate *isolate)
  */
 void perform(const FunctionCallbackInfo<Value>& args)
 {
-    csoundMessage(csound, "Began JavaScript perform()...\n");
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
-    //consume_messages(isolate);
-    csoundStart(csound);
-    int result = 0;
-    for (stop_playing = false, finished = false;
-            ((stop_playing == false) && (finished == false)); ) {
-        for (int i = 0; i < 100; ++i) {
-            if (uv_run(uv_default_loop(), UV_RUN_NOWAIT) == 0) {
-                break;
-            }
-            //consume_messages(isolate);
-        }
-        finished = csoundPerformBuffer(csound);
-    }
-    csoundMessage(csound, "Ended JavaScript perform(), cleaning up now.\n");
-    result = csoundCleanup(csound);
-    //consume_messages(isolate);
-    csoundReset(csound);
-    //csoundDestroyMessageBuffer(csound);
+    int result = uv_thread_create(&uv_csound_perform_thread, uv_csound_perform_thread_routine, csound);
     args.GetReturnValue().Set(Number::New(isolate, result));
 }
 
@@ -337,6 +326,11 @@ void perform(const FunctionCallbackInfo<Value>& args)
 void stop(const FunctionCallbackInfo<Value>& args)
 {
     stop_playing = true;
+}
+
+void on_exit()
+{
+    uv_close((uv_handle_t *)&uv_csound_message_async, 0);
 }
 
 void init(Handle<Object> target)
@@ -359,6 +353,8 @@ void init(Handle<Object> target)
     NODE_SET_METHOD(target, "isPlaying", isPlaying);
     NODE_SET_METHOD(target, "perform", perform);
     NODE_SET_METHOD(target, "stop", stop);
+    uv_async_init(uv_default_loop(), &uv_csound_message_async, uv_csound_message_callback);
+    std::atexit(&on_exit);
 }
 
 NODE_MODULE(binding, init);
