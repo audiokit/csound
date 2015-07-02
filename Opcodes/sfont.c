@@ -234,7 +234,7 @@ static int Sfplistapi(CSOUND *csound, SFPLISTAPI *p)
     sf = &globals->sfArray[(int) *p->ihandle];
     for (j =0; j < sf->presets_num; j++) {
       presetType *prs = &sf->preset[j];
-      csound->MessageS(csound, CSOUNDMSG_API_RESP, Str("%d,%d,'%s',%d,%d\n"),
+      csound->MessageS(csound, CSOUNDMSG_API_RESP, Str("SFP:%d,%d,'%s',%d,%d\n"),
                               num, j, filter_string(prs->name, temp_string),
                               prs->prog, prs->bank);
     }
@@ -298,7 +298,7 @@ static int Sfilistapi(CSOUND *csound, SFPLISTAPI *p)
     sf = &globals->sfArray[(int) *p->ihandle];
     for (j =0; j < sf->instrs_num; j++) {
       instrType *inst = &sf->instr[j];
-      csound->MessageS(csound, CSOUNDMSG_API_RESP, "%d,%d,'%s'\n", num, j, inst->name);
+      csound->MessageS(csound, CSOUNDMSG_API_RESP, "SFI:%d,%d,'%s'\n", num, j, inst->name);
     }
     return OK;
 }
