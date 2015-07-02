@@ -238,6 +238,7 @@ static int Sfplistapi(CSOUND *csound, SFPLISTAPI *p)
                               num, j, filter_string(prs->name, temp_string),
                               prs->prog, prs->bank);
     }
+    csound->MessageS(csound, CSOUNDMSG_API_RESP, Str("SFP:%d,END,%d\n"), num, sf->presets_num);
     return OK;
 }
 
@@ -300,6 +301,7 @@ static int Sfilistapi(CSOUND *csound, SFPLISTAPI *p)
       instrType *inst = &sf->instr[j];
       csound->MessageS(csound, CSOUNDMSG_API_RESP, "SFI:%d,%d,'%s'\n", num, j, inst->name);
     }
+    csound->MessageS(csound, CSOUNDMSG_API_RESP, "SFI:%d,END,%d\n", num, sf->instrs_num);
     return OK;
 }
 
