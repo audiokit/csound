@@ -224,6 +224,23 @@ static int Sfplist(CSOUND *csound, SFPLIST *p)
     return OK;
 }
 
+static int Sfplistapi(CSOUND *csound, SFPLISTAPI *p)
+{
+    sfontg *globals;
+    SFBANK *sf;
+    char temp_string[24];
+    int j, num = (int) *p->name;
+    globals = (sfontg *) (csound->QueryGlobalVariable(csound, "::sfontg"));
+    sf = &globals->sfArray[(int) *p->ihandle];
+    for (j =0; j < sf->presets_num; j++) {
+      presetType *prs = &sf->preset[j];
+      csound->MessageS(csound, CSOUNDMSG_API_RESP, Str("%d,%d,'%s',%d,%d\n"),
+                              num, j, filter_string(prs->name, temp_string),
+                              prs->prog, prs->bank);
+    }
+    return OK;
+}
+
 static int SfAssignAllPresets(CSOUND *csound, SFPASSIGN *p)
 {
     sfontg *globals;
@@ -269,6 +286,20 @@ static int Sfilist(CSOUND *csound, SFPLIST *p)
       csound->Message(csound, "%3d) %-20s\n", j, inst->name);
     }
     csound->Message(csound, "\n");
+    return OK;
+}
+
+static int Sfilistapi(CSOUND *csound, SFPLISTAPI *p)
+{
+    sfontg *globals;
+    SFBANK *sf;
+    int j, num = (int) *p->name;
+    globals = (sfontg *) (csound->QueryGlobalVariable(csound, "::sfontg"));
+    sf = &globals->sfArray[(int) *p->ihandle];
+    for (j =0; j < sf->instrs_num; j++) {
+      instrType *inst = &sf->instr[j];
+      csound->MessageS(csound, CSOUNDMSG_API_RESP, "%d,%d,'%s'\n", num, j, inst->name);
+    }
     return OK;
 }
 
@@ -2567,7 +2598,9 @@ static OENTRY localops[] = {
   { "sfplaym", S(SFPLAYMONO), 0, 5, "a", "iixxiooo",    (SUBR)SfPlayMono_set,
                                                        NULL, (SUBR)SfPlayMono },
   { "sfplist",S(SFPLIST),   0, 1,    "",     "i",      (SUBR)Sfplist          },
+  { "sfplistapi",S(SFPLISTAPI),0, 1, "",     "ii",     (SUBR)Sfplistapi       },
   { "sfilist",S(SFPLIST),   0, 1,    "",     "i",      (SUBR)Sfilist          },
+  { "sfilistapi",S(SFPLISTAPI),  0, 1,  "",  "ii",     (SUBR)Sfilistapi       },
   { "sfpassign",S(SFPASSIGN), 0, 1,  "",     "iip",    (SUBR)SfAssignAllPresets },
   { "sfinstrm", S(SFIPLAYMONO),0, 5, "a", "iixxiiooo", (SUBR)SfInstrPlayMono_set,
                                                   NULL, (SUBR)SfInstrPlayMono },
