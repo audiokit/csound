@@ -2122,7 +2122,6 @@ static void instance(CSOUND *csound, int insno)
                       insno, ip, lclbas, nxtopds);
     optxt = (OPTXT*) tp;
     prvids = prvpds = (OPDS*) ip;
-    prvids->insdshead = ip;
 
     /* initialize vars for CS_TYPE */
     for (current = tp->varPool->head; current != NULL; current = current->next) {
