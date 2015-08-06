@@ -33,7 +33,7 @@ if ! test -d ${AK_ROOT}; then
 fi
 
 EXTRA=""
-if "$BUILD_TYPE" = Debug; then
+if test "$BUILD_TYPE" = Debug; then
         EXTRA="-xcconfig ../debug.xcconfig"
 fi
 

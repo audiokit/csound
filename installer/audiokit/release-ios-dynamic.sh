@@ -43,7 +43,7 @@ FLAGS="-DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DUSE_OPEN_MP=0 \
 	-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1 -DSNDFILE_DIR=$SNDFILE"
 
 EXTRA=""
-if "$BUILD_TYPE" = Debug; then
+if test "$BUILD_TYPE" = Debug; then
 	EXTRA="-xcconfig ../debug.xcconfig"
 fi
 
