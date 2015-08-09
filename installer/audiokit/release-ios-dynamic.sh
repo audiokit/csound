@@ -42,18 +42,19 @@ FLAGS="-DUSE_GETTEXT=0 -DUSE_DOUBLE=0 -DUSE_OPEN_MP=0 \
 	-DBUILD_CSOUND_AC_PYTHON_INTERFACE=0 -DBUILD_CSOUND_AC_LUA_INTERFACE=0 \
 	-DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_CURL=0 -DBUILD_IMAGE_OPCODES=0 -DIOS=1 -DSNDFILE_DIR=$SNDFILE"
 
-EXTRA=""
+cp ../device.xcconfig ../simulator.xcconfig .
 if test "$BUILD_TYPE" = Debug; then
-	EXTRA="-xcconfig ../debug.xcconfig"
+	cat ../debug.xcconfig >> device.xcconfig
+	cat ../debug.xcconfig >> simulator.xcconfig
 fi
 
 echo "Building Csound (float) for ${BUILD_TYPE} ..."
 echo "Using flags: $FLAGS"
 
 cmake ../../.. -G Xcode $FLAGS || exit 1
-(xcodebuild -sdk iphoneos -xcconfig ../device.xcconfig $EXTRA -target CsoundLib -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
+(xcodebuild -sdk iphoneos -xcconfig device.xcconfig -target CsoundLib -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
 cp $BUILD_TYPE/CsoundLib.framework/CsoundLib CsoundLib-dev.dylib || exit 1
-(xcodebuild -sdk iphonesimulator -xcconfig ../simulator.xcconfig $EXTRA -target CsoundLib -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
+(xcodebuild -sdk iphonesimulator -xcconfig simulator.xcconfig -target CsoundLib -configuration $BUILD_TYPE | $XCPRETTY ) || exit 1
 cp $BUILD_TYPE/CsoundLib.framework/CsoundLib CsoundLib-sim.dylib || exit 1
 
 lipo -create CsoundLib-dev.dylib CsoundLib-sim.dylib -output $BUILD_TYPE/CsoundLib.framework/CsoundLib || exit 1
