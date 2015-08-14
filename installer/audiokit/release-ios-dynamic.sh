@@ -14,7 +14,8 @@
 
 
 # Default: AudioKit in the same parent directory as csound
-AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/iOS}
+AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit}
+AK_ROOT="${AK_ROOT}/AudioKit/Platforms/iOS"
 BUILD_TYPE=${BUILD_TYPE:-Release}
 
 # Path to the audiokit/libsndfile library with built libraries

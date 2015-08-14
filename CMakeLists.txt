@@ -406,6 +406,12 @@ find_package(OpenMP)
 
 # First, required stuff
 if(APPLE AND IOS)
+    # See if we can generate bitcode with LLVM
+    check_c_compiler_flag(-fembed-bitcode          HAS_EMBED_BITCODE)
+    if (HAS_EMBED_BITCODE)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fembed-bitcode")
+    endif()
+
     # Locate a pre-built iOS version of libsndfile
     find_library(LIBSNDFILE_LIBRARY sndfile PATHS ${SNDFILE_DIR}/audiokit NO_DEFAULT_PATH)
 else()

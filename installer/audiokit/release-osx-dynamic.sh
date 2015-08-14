@@ -14,7 +14,8 @@
 
 
 # Default: AudioKit in the same parent directory as csound
-AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit/AudioKit/Platforms/OSX/CsoundLib.framework}
+AK_ROOT=${AK_ROOT:-$PWD/../../../AudioKit}
+AK_ROOT="${AK_ROOT}/AudioKit/Platforms/OSX/CsoundLib.framework"
 BUILD_TYPE=${BUILD_TYPE:-Release}
 
 if ! test -d ${AK_ROOT}; then
