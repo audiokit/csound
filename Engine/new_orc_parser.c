@@ -27,6 +27,9 @@
 #include "csound_orc.h"
 #include "corfile.h"
 
+#include "cs_par_base.h"
+#include "cs_par_orc_semantics.h"
+
 #if defined(HAVE_DIRENT_H)
 #  include <dirent.h>
 #  if 0 && defined(__MACH__)
