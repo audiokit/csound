@@ -380,6 +380,9 @@ static int createScore(CSOUND *csound, FILE *unf)
 
 static int createExScore(CSOUND *csound, char *p, FILE *unf)
 {
+#if defined(MACOSX) && TARGET_OS_TV
+    csoundErrorMsg(csound, Str("tvOS is unable to call external commands"));
+#else
     char *extname;
     char *q;
     char prog[256];
@@ -451,6 +454,7 @@ static int createExScore(CSOUND *csound, char *p, FILE *unf)
     }
     csoundErrorMsg(csound, Str("Missing end tag </CsScore>"));
     free(extname);
+#endif
     return FALSE;
 }
 

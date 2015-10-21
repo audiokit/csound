@@ -106,6 +106,10 @@ typedef uint_least16_t uint16;
 #include <AvailabilityMacros.h>
 #endif
 
+#ifdef MACOSX
+#  include <TargetConditionals.h>
+#endif
+
 #include "float-version.h"
 
 /* Defined here as Android does not have log2 functions */

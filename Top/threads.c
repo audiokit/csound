@@ -104,6 +104,9 @@ PUBLIC void csoundSleep(size_t milliseconds)
 
 PUBLIC long csoundRunCommand(const char * const *argv, int noWait)
 {
+#if defined(MACOSX) && TARGET_OS_TV
+    return -1L; // No POSIX APIs on Apple TV
+#else
     long    retval;
 
     if (argv == NULL || argv[0] == NULL)
@@ -131,6 +134,7 @@ PUBLIC long csoundRunCommand(const char * const *argv, int noWait)
       retval = 255L;
     }
     return retval;
+#endif
 }
 
 PUBLIC void csoundSleep(size_t milliseconds)
