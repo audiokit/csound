@@ -422,6 +422,7 @@ int MIDIinsert(CSOUND *csound, int insno, MCHNBLK *chn, MEVENT *mep)
     }
     tp->active++;
     tp->instcnt++;
+    csound->dag_changed++;      /* Need to remake DAG */
     if (UNLIKELY(O->odebug)) {
       char *name = csound->engineState.instrtxtp[insno]->insname;
       if (UNLIKELY(name))
@@ -2483,13 +2484,13 @@ void *init_pass_thread(void *p){
           if (ip->reinitflag==1) {
             ip->reinitflag = 0;
           }
-    
+
         }
         ip = nxt;
 
       }
             csoundUnlockMutex(csound->init_pass_threadlock);
     }
-    
+
     return NULL;
 }
