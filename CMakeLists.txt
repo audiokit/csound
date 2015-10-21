@@ -412,8 +412,12 @@ if(APPLE AND IOS)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fembed-bitcode")
     endif()
 
-    # Locate a pre-built iOS version of libsndfile
-    find_library(LIBSNDFILE_LIBRARY sndfile PATHS ${SNDFILE_DIR}/audiokit NO_DEFAULT_PATH)
+    # Locate a pre-built version of libsndfile
+    if(TVOS)
+    	find_library(LIBSNDFILE_LIBRARY sndfile-tv PATHS ${SNDFILE_DIR}/audiokit NO_DEFAULT_PATH)
+    else()
+    	find_library(LIBSNDFILE_LIBRARY sndfile PATHS ${SNDFILE_DIR}/audiokit NO_DEFAULT_PATH)
+    endif()
 else()
     find_library(LIBSNDFILE_LIBRARY sndfile)
 endif()
