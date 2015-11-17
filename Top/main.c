@@ -46,6 +46,8 @@ extern  void    print_benchmark_info(CSOUND *, const char *);
 extern  void    openMIDIout(CSOUND *);
 extern  int     read_unified_file(CSOUND *, char **, char **);
 extern  int     read_unified_file2(CSOUND *csound, char *csd);
+extern  int     read_unified_file3(CSOUND *csound, char *csd);
+extern  int     read_unified_file4(CSOUND *csound, CORFIL *csd);
 extern  uintptr_t  kperfThread(void * cs);
 extern void cs_init_math_constants_macros(CSOUND *csound, PRE_PARM *yyscanner);
 extern void cs_init_omacros(CSOUND *csound, PRE_PARM*, NAMES *nn);
@@ -434,7 +436,7 @@ PUBLIC int csoundStart(CSOUND *csound) // DEBUG
     if (!O->sfheader)
       O->rewrt_hdr = 0;         /* cannot rewrite header of headerless file */
     /* VL 9 04 15: these not need occur jointly anymore */
-    /* 
+    /*
     if (O->sr_override || O->kr_override) {
       if (!O->sr_override || !O->kr_override)
         dieu(csound, Str("srate and krate overrides must occur jointly"));
@@ -491,8 +493,6 @@ PUBLIC int csoundCompile(CSOUND *csound, int argc, char **argv){
   else return result;
 }
 
-
-
 PUBLIC int csoundCompileCsd(CSOUND *csound, char *str) {
 
   if((csound->engineStatus & CS_STATE_COMP) == 0) {
@@ -501,7 +501,11 @@ PUBLIC int csoundCompileCsd(CSOUND *csound, char *str) {
     return csoundCompile(csound, argc, argv);
   }
   else {
+#ifdef JPFF
+    int res = read_unified_file3(csound, (char *) str);
+#else
     int res = read_unified_file2(csound, (char *) str);
+#endif
    if(res) {
     res = csoundCompileOrc(csound, NULL);
     if(res == CSOUND_SUCCESS){
@@ -516,3 +520,34 @@ PUBLIC int csoundCompileCsd(CSOUND *csound, char *str) {
    return res;
   }
 }
+
+PUBLIC int csoundCompileCsdText(CSOUND *csound, const char *csd_text)
+{
+#ifdef JPFF
+    int res = read_unified_file4(csound, corfile_create_r(csd_text));
+    if (res) {
+    res = csoundCompileOrc(csound, NULL);
+    if(res == CSOUND_SUCCESS){
+      csoundLockMutex(csound->API_lock);
+      char *sc = scsortstr(csound, csound->scorestr);
+      csoundInputMessageInternal(csound, (const char *) sc);
+      free(sc);
+      csoundUnlockMutex(csound->API_lock);
+      return CSOUND_SUCCESS;
+    }
+   }
+   return res;
+#else
+    FILE *temporary_file;
+    char temporary_filename[L_tmpnam];
+    int result = CSOUND_SUCCESS;
+    tmpnam(temporary_filename);
+    temporary_file = fopen(temporary_filename, "w+");
+    fwrite(csd_text, sizeof(char), strlen(csd_text), temporary_file);
+    fclose(temporary_file);
+    result = csoundCompileCsd(csound, temporary_filename);
+    remove(temporary_filename);
+    return result;
+#endif
+}
+

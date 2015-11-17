@@ -45,7 +45,7 @@
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN__)
 # include <windows.h>
 # include <winsock2.h>
 #endif
@@ -60,7 +60,7 @@
 #include "cs_par_dispatch.h"
 #include "csound_orc_semantics.h"
 
-#if defined(linux) || defined(__HAIKU__) || defined(__EMSCRIPTEN__)
+#if defined(linux) || defined(__HAIKU__) || defined(__EMSCRIPTEN__) || defined(__CYGWIN__)
 #define PTHREAD_SPINLOCK_INITIALIZER 0
 #endif
 
@@ -850,7 +850,7 @@ static const CSOUND cenviron_ = {
     NULL,           /* dag_task_dep */
     100,            /* dag_task_max_size */
     0,              /* tempStatus */
-    0,              /* orcLineOffset */
+    1,              /* orcLineOffset */
     0,              /* scoLineOffset */
     NULL,           /* csdname */
     -1,             /*  parserUdoflag */
@@ -1050,10 +1050,12 @@ static void psignal_(int sig, char *str)
     fprintf(stderr, "%s: %s\n", str, signal_to_string(sig));
 }
 #else
+# if !defined(__CYGWIN__)
 static void psignal(int sig, char *str)
 {
     fprintf(stderr, "%s: %s\n", str, signal_to_string(sig));
 }
+# endif
 #endif
 #elif defined(__BEOS__)
 static void psignal_(int sig, char *str)
@@ -4110,6 +4112,7 @@ static void csoundMessageBufferCallback_1_(CSOUND *csound, int attr,
 
     csoundLockMutex(pp->mutex_);
     len = vsnprintf(pp->buf, 16384, fmt, args); // FIXEDME: this can overflow
+    va_end(args);
     if (UNLIKELY((unsigned int) len >= (unsigned int) 16384)) {
       csoundUnlockMutex(pp->mutex_);
       fprintf(stderr, Str("csound: internal error: message buffer overflow\n"));
@@ -4147,6 +4150,7 @@ static void csoundMessageBufferCallback_2_(CSOUND *csound, int attr,
     default:
       len = vfprintf(stdout, fmt, args);
     }
+    va_end(args);
     p = (csMsgStruct*) malloc(sizeof(csMsgStruct) + (size_t) len);
     p->nxt = (csMsgStruct*) NULL;
     p->attr = attr;

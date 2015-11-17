@@ -24,15 +24,13 @@ script:
 - "[ ${COVERITY_SCAN_BRANCH} == 1 ] || (cd $TRAVIS_BUILD_DIR/build && cmake .. -DBUILD_STATIC_LIBRARY=ON
   -DBUILD_TESTS=ON && make && make test && make regression && make csdtests)"
 addons:
-  coverity_scan:
-    project:
-      name: csound/csound
-      description: A user-programmable and user-extensible sound processing language
-        and software synthesizer
-    build_command_prepend: mkdir -p $TRAVIS_BUILD_DIR/build && cd $TRAVIS_BUILD_DIR/build
-      && cmake ..
-    build_command: make -C $TRAVIS_BUILD_DIR/build
-    branch_pattern: coverity_scan
+      coverity_scan:
+          project:
+              name: "csound/csound"
+              description: "A user-programmable and user-extensible sound processing language and software synthesizer"
+          build_command_prepend: "mkdir -p $TRAVIS_BUILD_DIR/build && cd $TRAVIS_BUILD_DIR/build && cmake .."
+          build_command: "make -C $TRAVIS_BUILD_DIR/build"
+          branch_pattern: coverity_scan
 notifications:
   slack:
     secure: GZDsy8lLZ5/yFC90g95ItdJ4cBTkgiGOuWcDhqhRXWwzJm86hp4khMAqvl1hsyTUf5AzGt11/Ztveoby4jSmplFPgoZViWNHxiVGVYOvVFiS435DhmJdJOORLj6NavHmElp/yTG7Taj1pghBmbjN27WtCB9OiES9AOo3RqNW5lk=
