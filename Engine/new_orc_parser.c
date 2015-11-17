@@ -40,7 +40,7 @@ int             closedir(DIR*);
 #  endif
 #endif
 
-#if defined(WIN32)
+#if defined(WIN32) && !defined(__CYGWIN__)
 #  include <io.h>
 #  include <direct.h>
 #endif
@@ -162,18 +162,21 @@ TREE *csoundParseOrc(CSOUND *csound, const char *str)
         corfile_puts(bb, csound->expanded_orc);
       }
       else {
+        char bb[80];
         if (csound->orchstr == NULL ||
             corfile_body(csound->orchstr) == NULL)
           csound->orchstr = corfile_create_w();
         else
           corfile_reset(csound->orchstr);
+        snprintf(bb, 80, "#line %d\n", csound->orcLineOffset);
+        corfile_puts(bb, csound->orchstr);
         corfile_puts(str, csound->orchstr);
         corfile_puts("\n#exit\n", csound->orchstr);
         corfile_putc('\0', csound->orchstr);
         corfile_putc('\0', csound->orchstr);
       }
-      csound->DebugMsg(csound, "Calling preprocess on >>%s<<\n",
-              corfile_body(csound->orchstr));
+      /* csound->DebugMsg(csound, "Calling preprocess on >>%s<<\n", */
+      /*         corfile_body(csound->orchstr)); */
       //csound->DebugMsg(csound,"FILE: %s \n", csound->orchstr->body);
       //    csound_print_preextra(&qq);
       cs_init_math_constants_macros(csound, &qq);
@@ -185,8 +188,8 @@ TREE *csoundParseOrc(CSOUND *csound, const char *str)
         csound->LongJmp(csound, 1);
       }
       csound_prelex_destroy(qq.yyscanner);
-      csound->DebugMsg(csound, "yielding >>%s<<\n",
-                       corfile_body(csound->expanded_orc));
+      /* csound->DebugMsg(csound, "yielding >>%s<<\n", */
+      /*                  corfile_body(csound->expanded_orc)); */
       corfile_rm(&csound->orchstr);
 
     }
